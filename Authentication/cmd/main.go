@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/Nandainthegrass/Flipzon/Authentication/Redis"
 	"github.com/Nandainthegrass/Flipzon/Authentication/cmd/api"
 	"github.com/Nandainthegrass/Flipzon/Authentication/db"
 	"github.com/go-sql-driver/mysql"
@@ -18,7 +20,7 @@ func main() {
 	if err != nil {
 		log.Printf("Error loading env files: %v", err)
 	}
-	fmt.Println(os.Getenv("User"))
+
 	db, err := db.NewMySQLStorage(mysql.Config{
 		User:                 os.Getenv("User"),
 		Passwd:               os.Getenv("Passwd"),
@@ -35,8 +37,13 @@ func main() {
 
 	initStorage(db)
 
-	//	raddr := os.Getenv("REDIS_ADDR")
-	//	rdb := Redis.NewRedisClient(raddr) //type: *redis.Client
+	raddr := os.Getenv("REDIS_ADDR")
+	rdb := Redis.NewRedisClient(raddr) //type: *redis.Client
+	err = rdb.Set(context.Background(), "myKey", "myValue", 0).Err()
+	if err != nil {
+		fmt.Println("Error setting value:", err)
+		return
+	}
 
 	server := api.NewAPIServer(":8001", db)
 	if err := server.Run(); err != nil {

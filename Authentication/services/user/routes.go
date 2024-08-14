@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,16 +9,19 @@ import (
 	"github.com/Nandainthegrass/Flipzon/Authentication/types"
 	"github.com/Nandainthegrass/Flipzon/Authentication/utils"
 	"github.com/go-playground/validator/v10"
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 )
 
 type Handler struct {
 	store types.UserStore
+	rdb   *redis.Client
 }
 
-func NewHandler(store types.UserStore) *Handler {
+func NewHandler(store types.UserStore, rdb *redis.Client) *Handler {
 	return &Handler{
 		store: store,
+		rdb:   rdb,
 	}
 }
 
@@ -113,6 +117,10 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	SessionID := auth.GenerateID()
 	auth.SetCookie(w, SessionID)
 	//Now then we have to set redis
-
+	err = h.rdb.LPush(context.Background(), SessionID, "").Err()
+	if err != nil {
+		fmt.Println("Error setting value:", err)
+		return
+	}
 	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Login successful"})
 }

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 
@@ -39,13 +37,8 @@ func main() {
 
 	raddr := os.Getenv("REDIS_ADDR")
 	rdb := Redis.NewRedisClient(raddr) //type: *redis.Client
-	err = rdb.Set(context.Background(), "myKey", "myValue", 0).Err()
-	if err != nil {
-		fmt.Println("Error setting value:", err)
-		return
-	}
 
-	server := api.NewAPIServer(":8001", db)
+	server := api.NewAPIServer(":8001", db, rdb)
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}
